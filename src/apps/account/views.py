@@ -21,7 +21,7 @@ from drf_spectacular.utils import extend_schema
 
 from .tasks import send_verification_email
 
-from . import validate_user_email
+from . import verify_user_email
 
 from . import serializers
 from . import models
@@ -35,13 +35,13 @@ def register_view(request):
     serializer = serializers.RegisterSerializer(data=request.data)
     if serializer.is_valid():
         email = serializer.validated_data.get("email")
-        validation_token = validate_user_email.generate_verification_token(email=email)
+        validation_token = verify_user_email.generate_verification_token(email=email)
         verify_url = reverse("account:verify_token", kwargs={"token": validation_token})
         verification_url = request.build_absolute_uri(verify_url)
         # verification_url = request.build_absolute_uri('/api/account/verify/') + str(validation_token)
-        print("--------------------------")
-        print(verification_url)
-        print("--------------------------")
+        # print("--------------------------")
+        # print(verification_url)
+        # print("--------------------------")
         sent = send_verification_email.delay(
             user_email=email, verification_url=verification_url
         )
@@ -62,10 +62,10 @@ def register_view(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def verify_email_view(request, token):
-    email = validate_user_email.get_email_from_token(token=token)
+    email = verify_user_email.get_email_from_token(token=token)
     if not email:
         return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
-    verified_email = validate_user_email.verify_user_email(email=email)
+    verified_email = verify_user_email.verify_user_email(email=email)
     if not verified_email:
         return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"message": "Email verified"}, status=status.HTTP_200_OK)
@@ -103,10 +103,10 @@ def user_list_view(request):
 def user_detail_view(request):
     """user detail view"""
     user = request.user
-    if not user:
-        return Response(
-            {"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND
-        )
+    # if not user:
+    #     return Response(
+    #         {"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND
+    #     )
     serializer = serializers.UserSerializer(user)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -114,14 +114,21 @@ def user_detail_view(request):
 @parser_classes([MultiPartParser, FormParser])
 @api_view(["POST"])
 def change_avatar_view(request):
-    """change user's avatar view"""
+    """change user's avatar view, NOTE: user 'Content-Type: multipart/form-data'"""
     user = request.user
-    if not user:
-        return Response(
-            {"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND
-        )
     serializer = serializers.UserAvatarSerializer(instance=user, data=request.data, context={"request": request})
-    if serializer.is_valid():
+    if serializer.is_valid(raise_exception=True):
         serializer.save()
         return Response({"message": "Success added Avatar"}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(request=serializers.UserEditSerializer, responses=None)
+@api_view(["PATCH"])
+def edit_user_info(request):
+    user = request.user
+    serializer = serializers.UserEditSerializer(instance=user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message": "Success edited user info [firstname and lastname]"}, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

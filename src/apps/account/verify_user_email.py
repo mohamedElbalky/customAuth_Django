@@ -5,6 +5,7 @@ from .models import VerificationToken
 
 
 def generate_verification_token(email):
+    """use this function with register or reset password"""
     token = secrets.token_hex(32)
     # --------- delete old token for email -------
     old_tokens = VerificationToken.objects.filter(email=email)

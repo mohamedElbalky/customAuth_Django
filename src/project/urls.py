@@ -27,7 +27,7 @@ urlpatterns = [
     
     # def spectacular api
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/doc/", SpectacularSwaggerView.as_view(url_name="schema"), name="doc"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="doc"),
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]
 

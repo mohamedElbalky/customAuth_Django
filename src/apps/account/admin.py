@@ -7,7 +7,7 @@ from .models import User, VerificationToken
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     ordering = ["email"]
-    list_display = ["email", "phone_number", "first_name", "last_name", "is_staff"]
+    list_display = ["email", "phone_number", "is_verified", "is_staff"]
     list_filter = ["is_staff", "is_active", "is_superuser", "groups"]
     search_fields = ["email", "first_name", "last_name"]
     date_hierarchy = "date_joined"
