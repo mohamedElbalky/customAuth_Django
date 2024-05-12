@@ -14,3 +14,5 @@ def send_verification_email(user_email, verification_url):
         recipient_list=[user_email],
         fail_silently=False,
     )
+    # for i in range(10):
+    #     print(i)

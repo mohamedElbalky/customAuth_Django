@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+
+  db:
+    container_name: postgres
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgres/data/
+    environment:
+      - POSTGRES_DB=auth
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=
+    networks:
+      - inside-net
+
+  web:
+    container_name: web-django
+    build: ./src
+    volumes:
+      - ./src:/app
+    ports:
+      - "8000:8000"
+    command: > 
+            sh -c "python manage.py makemigrations && 
+                    python manage.py migrate && 
+                    python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=auth
+      - DB_USER=postgres
+      - DB_PASS=
+      - DEBUG=1
+    depends_on:
+      - db
+    networks:
+      - outside-net
+      - inside-net
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    networks:
+      - inside-net
+
+  celery:
+    container_name: celery
+    build: ./src
+    command: celery -A project worker -l INFO
+    restart: always
+    depends_on: 
+      - redis
+      - web
+    
+    networks:
+      - outside-net
+      - inside-net
+
+volumes:
+  postgres_data:
+
+networks:
+  outside-net:
+  inside-net:
+    internal: true

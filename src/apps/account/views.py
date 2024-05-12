@@ -80,7 +80,7 @@ def login_view(request):
     if serializer.is_valid():
         user = serializer.validated_data
         refresh = RefreshToken.for_user(user)
-        print(dir(refresh))
+        # print(dir(refresh))
         return Response(
             {"access": str(refresh.access_token), "refresh": str(refresh)},
             status=status.HTTP_201_CREATED,
